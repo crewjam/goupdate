@@ -96,6 +96,14 @@ func (r *Runner) Run() error {
 		}
 	}
 
+	{
+		cmd := exec.Command("go", "mod", "tidy")
+		cmd.Dir = r.RootDir
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("go mod tidy failed: %v", err)
+		}
+	}
+
 	if r.DoCommit {
 		message := []string{"Update go.mod", ""}
 		for _, req := range updates {

@@ -20,6 +20,7 @@ func main() {
 	flag.StringVar(&r.TestCommand, "test", "go test ./...", "The command that evaluates if an update works")
 	flag.StringVar(&r.RootDir, "c", ".", "The root directory of the module to update")
 	flag.BoolVar(&r.DoCommit, "commit", false, "Commit changes")
+	flag.BoolVar(&r.Verbose, "v", false, "Show output of test runs")
 	flag.Parse()
 
 	if err := r.Run(); err != nil {
@@ -33,6 +34,7 @@ type Runner struct {
 	RootDir string
 	TestCommand string
 	DoCommit bool
+	Verbose bool
 	OriginalMod *modfile.File
 }
 
@@ -205,6 +207,10 @@ func (r Runner) try(updates []*modfile.Require, indent string) ([]*modfile.Requi
 func (r Runner) test() (bool, error) {
 	cmd := exec.Command("/bin/sh", "-c", r.TestCommand)
 	cmd.Dir = r.RootDir
+	if r.Verbose {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
 	err := cmd.Run()
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {

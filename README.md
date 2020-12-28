@@ -4,7 +4,7 @@
 *goupdate* is a tool for keeping your `go.mod` file updated without breaking
 everything.
 
-For projects of sufficient size, just running `go get -u ./...` will break your code. `goupdater` can figure out which updates are safe to apply, and which are not.
+For projects of sufficient size, just running `go get -u ./...` will break your code. `goupdate` can figure out which updates are safe to apply, and which are not.
 
 ## Usage
 
@@ -17,6 +17,8 @@ $ goupdate
 
 * `-c` - The root directory of the module to update (default ".")
 * `-test` - The command that evaluates if an update works (default "go test ./...")
+* `-commit` - Commit changes on success
+* `-v` - Show output from test command
 
 ## How it works
 

@@ -135,12 +135,14 @@ func (r *Runner) Run() error {
 		cmd := exec.Command("git", "-C", r.RootDir, "add", "-A")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+		cmd.Dir = r.RootDir
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("git add failed: %v", err)
 		}
 		cmd = exec.Command("git", "commit", "-m", strings.Join(message, "\n"))
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+		cmd.Dir = r.RootDir
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("git commit failed: %v", err)
 		}

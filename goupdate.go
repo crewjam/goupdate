@@ -45,6 +45,15 @@ func (r *Runner) Run() error {
 		return err
 	}
 
+	initialTestPassed, err := r.test()
+	if err != nil {
+		return err
+	}
+	if !initialTestPassed {
+		fmt.Printf("%s\n", color.RedString("test failed before upgrading anything, aborting."))
+		return nil
+	}
+
 	if err := r.updateAll(); err != nil {
 		_ = r.writeModFile(r.OriginalMod)
 		return err
@@ -69,7 +78,7 @@ func (r *Runner) Run() error {
 	}
 
 	if len(updates) == 0 {
-		fmt.Printf("%s", color.GreenString("all packages are up to date"))
+		fmt.Printf("%s\n", color.GreenString("all packages are up to date"))
 		return nil
 	}
 
@@ -87,6 +96,15 @@ func (r *Runner) Run() error {
 		return err
 	}
 
+	finalTestPassed, err := r.test()
+	if err != nil {
+		return err
+	}
+	if !finalTestPassed {
+		fmt.Printf("%s\n", color.RedString("test failed after applying upgrades, aborting."))
+		return nil
+	}
+
 	for _, req := range updates {
 		if requiredVersion(&modfile.File{Require: goodUpdates}, req.Mod.Path) != "" {
 			fmt.Printf("%s: %s %s\n", color.GreenString("package upgraded"), req.Mod.Path, req.Mod.Version)
@@ -98,6 +116,7 @@ func (r *Runner) Run() error {
 		}
 	}
 
+
 	{
 		cmd := exec.Command("go", "mod", "tidy")
 		cmd.Dir = r.RootDir
@@ -106,7 +125,7 @@ func (r *Runner) Run() error {
 		}
 	}
 
-	if r.DoCommit {
+	if r.DoCommit && len(updates) > 0 {
 		message := []string{"Update go.mod", ""}
 		for _, req := range updates {
 			if requiredVersion(&modfile.File{Require: goodUpdates}, req.Mod.Path) != "" {

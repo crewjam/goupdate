@@ -116,7 +116,6 @@ func (r *Runner) Run() error {
 		}
 	}
 
-
 	{
 		cmd := exec.Command("go", "mod", "tidy")
 		cmd.Dir = r.RootDir
@@ -129,14 +128,20 @@ func (r *Runner) Run() error {
 		message := []string{"Update go.mod", ""}
 		for _, req := range updates {
 			if requiredVersion(&modfile.File{Require: goodUpdates}, req.Mod.Path) != "" {
-				message = append(message, "* upgrade %s from %s to %s",
-					req.Mod.Path, requiredVersion(r.OriginalMod, req.Mod.Path), req.Mod.Version)
+				message = append(message, fmt.Sprintf("* upgrade %s from %s to %s",
+					req.Mod.Path, requiredVersion(r.OriginalMod, req.Mod.Path), req.Mod.Version))
 			}
 		}
-		if err := exec.Command("git", "-C", r.RootDir, "add", "-A").Run(); err != nil {
+		cmd := exec.Command("git", "-C", r.RootDir, "add", "-A")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("git add failed: %v", err)
 		}
-		if err := exec.Command("git", "commit", "-m", strings.Join(message, "\n")); err != nil {
+		cmd = exec.Command("git", "commit", "-m", strings.Join(message, "\n"))
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("git commit failed: %v", err)
 		}
 	}

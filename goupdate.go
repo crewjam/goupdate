@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/mod/modfile"
 	"github.com/fatih/color"
@@ -18,6 +19,7 @@ func main() {
 	r := Runner{}
 	flag.StringVar(&r.TestCommand, "test", "go test ./...", "The command that evaluates if an update works")
 	flag.StringVar(&r.RootDir, "c", ".", "The root directory of the module to update")
+	flag.BoolVar(&r.DoCommit, "commit", false, "Commit changes")
 	flag.Parse()
 
 	if err := r.Run(); err != nil {
@@ -30,6 +32,7 @@ func main() {
 type Runner struct {
 	RootDir string
 	TestCommand string
+	DoCommit bool
 	OriginalMod *modfile.File
 }
 
@@ -90,6 +93,22 @@ func (r *Runner) Run() error {
 	for _, req := range updates {
 		if requiredVersion(&modfile.File{Require: goodUpdates}, req.Mod.Path) == "" {
 			fmt.Printf("%s: %s %s\n", color.RedString("package upgrade failed"), req.Mod.Path, req.Mod.Version)
+		}
+	}
+
+	if r.DoCommit {
+		message := []string{"Update go.mod", ""}
+		for _, req := range updates {
+			if requiredVersion(&modfile.File{Require: goodUpdates}, req.Mod.Path) != "" {
+				message = append(message, "* upgrade %s from %s to %s",
+					req.Mod.Path, requiredVersion(r.OriginalMod, req.Mod.Path), req.Mod.Version)
+			}
+		}
+		if err := exec.Command("git", "-C", r.RootDir, "add", "-A").Run(); err != nil {
+			return fmt.Errorf("git add failed: %v", err)
+		}
+		if err := exec.Command("git", "commit", "-m", strings.Join(message, "\n")); err != nil {
+			return fmt.Errorf("git commit failed: %v", err)
 		}
 	}
 

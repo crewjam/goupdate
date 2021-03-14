@@ -195,10 +195,22 @@ func (r Runner) try(updates []*modfile.Require, indent string) ([]*modfile.Requi
 		return nil, err
 	}
 
-	ok, err := r.test()
+	// we have to run `go get ./...` before we run the test
+	// otherwise we'll get errors in go >= 1.16 like:
+	//    go: <package>: package golang.org/x/net/html imported from implicitly required module; to add missing requirements, run:
+	// 	    go get golang.org/x/net/html@v0.0.0-20210226172049-e18ecbb05110
+	ok, err := r.goGet()
 	if err != nil {
 		return nil, err
 	}
+
+	if ok {
+		ok, err = r.test()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if ok {
 		fmt.Printf("%s  test passed\n", indent)
 		return updates, nil
@@ -234,6 +246,24 @@ func (r Runner) try(updates []*modfile.Require, indent string) ([]*modfile.Requi
 	}
 
 	return goodUpdates, nil
+}
+
+func (r Runner) goGet() (bool, error) {
+	cmd := exec.Command("go", "get", "./...")
+	cmd.Dir = r.RootDir
+	if r.Verbose {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+	err := cmd.Run()
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("cannot run go get ./...: %s", err)
+	}
+	return true, nil
 }
 
 // test runs the tests to determine if an upgrade was successful

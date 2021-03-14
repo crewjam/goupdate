@@ -132,6 +132,9 @@ func (r *Runner) Run() error {
 				message = append(message, fmt.Sprintf("* upgrade %s from %s to %s",
 					req.Mod.Path, requiredVersion(r.OriginalMod, req.Mod.Path), req.Mod.Version))
 				goodUpdateCount++
+			} else {
+				message = append(message, fmt.Sprintf("* FAILED upgrade %s from %s to %s",
+					req.Mod.Path, requiredVersion(r.OriginalMod, req.Mod.Path), req.Mod.Version))
 			}
 		}
 

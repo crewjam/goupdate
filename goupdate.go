@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -162,14 +161,10 @@ func (r *Runner) Run() error {
 func (r Runner) updateAll() error {
 	fmt.Printf("running go get -u ./...\n")
 	cmd := exec.Command("go", "get", "-u", "./...")
-	outputReader, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	cmd.Stderr = cmd.Stdout
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	cmd.Dir = r.RootDir
 	if err := cmd.Run(); err != nil {
-		_, _ = io.Copy(os.Stdout, outputReader)
 		return fmt.Errorf("go get -u ./...: %s", err)
 	}
 	return nil

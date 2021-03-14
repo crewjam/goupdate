@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"golang.org/x/mod/modfile"
 	"github.com/fatih/color"
+	"golang.org/x/mod/modfile"
 )
 
 func main() {
@@ -31,10 +31,10 @@ func main() {
 
 // Runner holds the state for an update run
 type Runner struct {
-	RootDir string
+	RootDir     string
 	TestCommand string
-	DoCommit bool
-	Verbose bool
+	DoCommit    bool
+	Verbose     bool
 	OriginalMod *modfile.File
 }
 
@@ -156,8 +156,7 @@ func (r *Runner) Run() error {
 	return nil
 }
 
-
-func (r Runner) updateAll() (error) {
+func (r Runner) updateAll() error {
 	fmt.Printf("running go get -u ./...\n")
 	cmd := exec.Command("go", "get", "-u", "./...")
 	outputReader, err := cmd.StdoutPipe()
@@ -167,7 +166,7 @@ func (r Runner) updateAll() (error) {
 	cmd.Stderr = cmd.Stdout
 	cmd.Dir = r.RootDir
 	if err := cmd.Run(); err != nil {
-		_,_ = io.Copy(os.Stdout, outputReader)
+		_, _ = io.Copy(os.Stdout, outputReader)
 		return fmt.Errorf("go get -u ./...: %s", err)
 	}
 	return nil
@@ -215,11 +214,11 @@ func (r Runner) try(updates []*modfile.Require, indent string) ([]*modfile.Requi
 	// broken
 	requireA, requireB := bisect(updates)
 
-	successA, err := r.try(requireA, indent + "  ")
+	successA, err := r.try(requireA, indent+"  ")
 	if err != nil {
 		return nil, err
 	}
-	successB, err := r.try(requireB, indent + "  ")
+	successB, err := r.try(requireB, indent+"  ")
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +263,7 @@ func (r Runner) readModFile() (*modfile.File, error) {
 }
 
 // writeModFile writes `mf` to go.mod.
-func (r Runner) writeModFile(mf *modfile.File) (error) {
+func (r Runner) writeModFile(mf *modfile.File) error {
 	buf, err := mf.Format()
 	if err != nil {
 		return err
@@ -272,26 +271,25 @@ func (r Runner) writeModFile(mf *modfile.File) (error) {
 	return ioutil.WriteFile(filepath.Join(r.RootDir, "go.mod"), buf, 0644)
 }
 
-
 // bisect returns two require lists, each containing approximately half of the
 // items in `updates`
 func bisect(updates []*modfile.Require) ([]*modfile.Require, []*modfile.Require) {
 	a, b := []*modfile.Require{}, []*modfile.Require{}
 	for i := range updates {
-		if i % 2 == 0 {
+		if i%2 == 0 {
 			a = append(a, updates[i])
 		} else {
 			b = append(b, updates[i])
 		}
 	}
-	return a,b
+	return a, b
 }
 
 // setVersions updates the requirements in `mf` with the updates described
 // by `updates`.
 func setVersions(mf *modfile.File, updates []*modfile.Require) {
 	for _, req := range updates {
-		_ = mf.AddRequire(req.Mod.Path, req.Mod.Version)  // AddRequire cannot fail
+		_ = mf.AddRequire(req.Mod.Path, req.Mod.Version) // AddRequire cannot fail
 	}
 }
 
